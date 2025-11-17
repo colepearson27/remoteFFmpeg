@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"strings"
 	"os"
 	"os/exec"
 	"log"
@@ -60,6 +61,11 @@ func main() {
 		ffmpegOutputArgs = append(ffmpegOutputArgs, ffmpegArgs[i])
 	}
 	outputFile = ffmpegArgs[len(ffmpegArgs) - 1]
+
+	if strings.HasPrefix(outputFile, "file:") {
+		outputFile = outputFile[5:]
+		log.Fatal(outputFile)
+	}
 
 	log.Printf("FFmpeg args %v", ffmpegArgs)
 	log.Printf("Input file: %s", inputFile)
