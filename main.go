@@ -60,7 +60,6 @@ func main() {
 		ffmpegOutputArgs = append(ffmpegOutputArgs, ffmpegArgs[i])
 	}
 	outputFile = ffmpegArgs[len(ffmpegArgs) - 1]
-	ffmpegOutputArgs = append(ffmpegOutputArgs, outputFile)
 
 	log.Printf("FFmpeg args %v", ffmpegArgs)
 	log.Printf("Input file: %s", inputFile)
@@ -95,6 +94,7 @@ func main() {
 	fmt.Println("Running FFmpeg Command...")
 	ffmpegCommandArgs := []string{fmt.Sprintf("%s@%s", config.Hostname, config.Host), "-p", config.SshPort, "ffmpeg", "-i", fmt.Sprintf("%s/%s", tmpFolder, inputFile)}
 	ffmpegCommandArgs = append(ffmpegCommandArgs, ffmpegOutputArgs...)
+	ffmpegCommandArgs = append(ffmpegCommandArgs, fmt.Sprintf("%s/%s", tmpFolder, outputFile))
 	fmt.Println(ffmpegCommandArgs)
 	ffmpegCmd := exec.Command("ssh", ffmpegCommandArgs...)
 	ffmpegOutput, ffmpegErr := ffmpegCmd.CombinedOutput()
@@ -106,7 +106,7 @@ func main() {
 
 	// Copy the resulting file back to our computer
 	fmt.Println("Copying File from Host...")
-	scpOutputArgs := []string{inputFile, fmt.Sprintf("%s@%s:%s/", config.Hostname, config.Host, tmpFolder), outputFile}
+	scpOutputArgs := []string{fmt.Sprintf("%s@%s:%s/%s", config.Hostname, config.Host, tmpFolder, outputFile), outputFile}
 	scpOutputCmd := exec.Command("scp", scpOutputArgs...)
 	scpOutput, scpOutputErr := scpOutputCmd.CombinedOutput()
 	if scpOutputErr != nil {

@@ -1,6 +1,8 @@
 remoteFFmpeg
 config.json
 test.mp4
+test2.mp4
 test.mkv
+test2.mkv
 test.sh
 build
