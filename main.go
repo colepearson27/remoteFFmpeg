@@ -85,40 +85,26 @@ func main() {
 	tmpFolder = string(cmdOutput[:len(cmdOutput) - 1])
 	log.Printf("Temp Folder: %s", tmpFolder)
 
-	// Copy input file to temp directory to host
-	fmt.Println("Copying File to host...")
-	scpInputArgs := []string{inputFile, fmt.Sprintf("%s@%s:%s/", config.Hostname, config.Host, tmpFolder)}
-	scpInputCmd := exec.Command("scp", scpInputArgs...)
-	scpOutput, scpInputErr := scpInputCmd.CombinedOutput()
-	if scpInputErr != nil {
-		log.Println(string(scpOutput))
-		log.Fatal(scpInputErr)
-	}
+	// cat test.mp4 | ssh robot@robot ffmpeg -i - -map_metadata -1 -c:v libsvtav1 -crf 30 -preset 1 -b:v 0 -g 60 -movflags +faststart -c:a copy -f matroska - > c.mkv
 
-	// Run the FFmpeg command
-	// This assumes that the FFmpeg command can run on the target computer
-	fmt.Println("Running FFmpeg Command...")
-	ffmpegCommandArgs := []string{fmt.Sprintf("%s@%s", config.Hostname, config.Host), "-p", config.SshPort, "ffmpeg", "-i", fmt.Sprintf("%s/%s", tmpFolder, inputFile)}
-	ffmpegCommandArgs = append(ffmpegCommandArgs, ffmpegOutputArgs...)
-	ffmpegCommandArgs = append(ffmpegCommandArgs, fmt.Sprintf("%s/%s", tmpFolder, outputFile))
-	fmt.Println(ffmpegCommandArgs)
-	ffmpegCmd := exec.Command("ssh", ffmpegCommandArgs...)
-	ffmpegOutput, ffmpegErr := ffmpegCmd.CombinedOutput()
-	if ffmpegErr != nil {
-		log.Println(string(ffmpegOutput))
-		log.Fatal(ffmpegErr)
-	}
-	log.Println(string(ffmpegOutput))
+	// Steam to remote, transcode, and stream back to local
+	everythingArgs := []string{fmt.Sprintf("%s@%s", config.Hostname, config.Host), "ffmpeg", "-i", "-"}
+	everythingArgs = append(everythingArgs, ffmpegOutputArgs...)
+	everythingArgs = append(everythingArgs, []string{"-f", "matroska", "-"}...)
+	fmt.Println("Doing Everything...")
+	fmt.Println(everythingArgs)
+	everythingCmd := exec.Command("ssh", everythingArgs...)
 
-	// Copy the resulting file back to our computer
-	fmt.Println("Copying File from Host...")
-	scpOutputArgs := []string{fmt.Sprintf("%s@%s:%s/%s", config.Hostname, config.Host, tmpFolder, outputFile), outputFile}
-	scpOutputCmd := exec.Command("scp", scpOutputArgs...)
-	scpOutput, scpOutputErr := scpOutputCmd.CombinedOutput()
-	if scpOutputErr != nil {
-		log.Println(string(scpOutput))
-		log.Fatal(scpOutputErr)
-	}
+	c1 := exec.Command("cat", inputFile)
+    everythingCmd.Stdin, _ = c1.StdoutPipe()
+	c2 := exec.Command("tee", outputFile)
+	c2.Stdin, _ = everythingCmd.StdoutPipe()
+    _ = everythingCmd.Start()
+	_ = c2.Start()
+    _ = c1.Start()
+    _ = everythingCmd.Wait()
+	_ = c1.Wait()
+	_ = c2.Wait()
 
 	// Remove the temp folder when done with it
 	fmt.Println("Removing Temp Dir...")
