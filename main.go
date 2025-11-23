@@ -23,6 +23,11 @@ type Config struct {
 }
 
 func main() {
+	logFile, err := os.Open("/home/robot/log.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(logFile)
 	// Read Config file
 	var config *Config
 	configFile, openErr := os.Open("config.json")
@@ -51,6 +56,7 @@ func main() {
 	var inputFile string
 	var outputFile string
 
+	log.Println(os.Args)
 	// Get the files that are used in simple FFmpeg commands
 	for i := 1; i < len(ffmpegArgs) - 1; i++ {
 		if ffmpegArgs[i] == "-i" {
@@ -61,6 +67,7 @@ func main() {
 		ffmpegOutputArgs = append(ffmpegOutputArgs, ffmpegArgs[i])
 	}
 	outputFile = ffmpegArgs[len(ffmpegArgs) - 1]
+	log.Println(ffmpegOutputArgs)
 
 	if strings.HasPrefix(outputFile, "file:") {
 		outputFile = outputFile[5:]
@@ -93,6 +100,7 @@ func main() {
 	everythingArgs = append(everythingArgs, []string{"-f", "matroska", "-"}...)
 	fmt.Println("Doing Everything...")
 	fmt.Println(everythingArgs)
+	log.Println(everythingArgs)
 	everythingCmd := exec.Command("ssh", everythingArgs...)
 
 	c1 := exec.Command("cat", inputFile)
