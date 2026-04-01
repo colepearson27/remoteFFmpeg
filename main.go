@@ -23,7 +23,7 @@ type Config struct {
 }
 
 func main() {
-	logFile, err := os.Open("/home/robot/log.txt")
+	logFile, err := os.Open("log.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
